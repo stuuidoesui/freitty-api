@@ -1,0 +1,42 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: freitty
+          POSTGRES_PASSWORD: freitty
+          POSTGRES_DB: freitty
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U freitty"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    env:
+      DATABASE_URL: postgresql://freitty:freitty@localhost:5432/freitty?schema=public
+      DEMO_NOW: 2026-04-17T12:00:00.000Z
+      FRONTEND_ORIGIN: http://localhost:5173
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npx prisma generate
+      - run: npx prisma migrate deploy
+      - run: npx prisma db seed
+      - run: npx tsc --noEmit
+      - run: npx eslint "{src,apps,libs,test}/**/*.ts"
+      - run: npm test -- --runInBand
+      - run: npm run test:e2e -- --runInBand

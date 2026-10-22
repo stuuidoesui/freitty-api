@@ -1,0 +1,192 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum UserRole {
+  ADMIN
+  DISPATCHER
+  FLOOR_LEAD
+  DRIVER
+}
+
+enum OrderType {
+  CROSS_DOCK
+  CONSOLIDATION
+}
+
+enum OrderStatus {
+  DRAFT
+  NEW
+  READY
+  IN_PROGRESS
+  ON_STOCK
+  CONSOLIDATED
+  IN_TRANSIT
+  DECONSOLIDATED
+  COMPLETED
+  CLOSED
+}
+
+enum CargoUnit {
+  STANDARD
+  XL
+}
+
+enum OperationType {
+  UNLOADING
+  DISPOSAL
+  RESTACK
+  LOADING
+}
+
+model Account {
+  id      String  @id @default(cuid())
+  company String
+  balance Int     @default(0)
+  users   User[]
+  orders  Order[]
+}
+
+model User {
+  id            String           @id @default(cuid())
+  code          String           @unique
+  name          String
+  role          UserRole
+  avatarColor   String
+  accountId     String
+  account       Account          @relation(fields: [accountId], references: [id])
+  createdOrders Order[]          @relation("CreatedBy")
+  assignedDocks DockAssignment[]
+}
+
+model Hub {
+  id     String  @id @default(cuid())
+  name   String  @unique
+  region String
+  orders Order[]
+}
+
+model Order {
+  id              String          @id @default(cuid())
+  number          String          @unique
+  type            OrderType
+  service         String?
+  services        String[]
+  status          OrderStatus
+  statusLabel     String
+  hasAlert        Boolean         @default(false)
+  alertReason     String?
+  awaitingAction  Boolean         @default(false)
+  scheduledAt     DateTime?
+  completedAt     DateTime?
+  destination     String?
+  destinationNote String?
+  carrier         String?
+  carrierPhone    String?
+  customer        String?
+  declaredQty     Int?
+  actualQty       Int?
+  qtyLabel        String?
+  trailerType     String?
+  truck           String?
+  trailer         String?
+  trailersCount   Int?
+  nextStep        String?
+  nextStepUrgent  Boolean         @default(false)
+  totalCents      Int             @default(0)
+  invoiceNumber   String?
+  commentCount    Int             @default(0)
+  photoCount      Int             @default(0)
+  requiredPhotos  Int             @default(0)
+  warehouseNote   String?
+  statusFlow      String?
+  deltasCount     Int             @default(0)
+  deltaLabel      String?
+  refNumber       String?
+  accountId       String
+  account         Account         @relation(fields: [accountId], references: [id])
+  hubId           String
+  hub             Hub             @relation(fields: [hubId], references: [id])
+  createdById     String
+  createdBy       User            @relation("CreatedBy", fields: [createdById], references: [id])
+  subOrders       SubOrder[]
+  cargoLines      CargoLine[]
+  dock            DockAssignment?
+  operations      Operation[]
+  supplies        Supply[]
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
+
+  @@index([status])
+  @@index([type])
+  @@index([scheduledAt])
+  @@index([hasAlert])
+  @@index([completedAt])
+}
+
+model SubOrder {
+  id        String  @id @default(cuid())
+  number    String
+  refNumber String
+  pallets   Int
+  alert     String?
+  orderId   String
+  order     Order   @relation(fields: [orderId], references: [id], onDelete: Cascade)
+
+  @@index([orderId])
+}
+
+model CargoLine {
+  id       String    @id @default(cuid())
+  qty      Int
+  unit     CargoUnit
+  unitSize String?
+  orderId  String
+  order    Order     @relation(fields: [orderId], references: [id], onDelete: Cascade)
+}
+
+model DockAssignment {
+  id           String   @id @default(cuid())
+  dockNumber   Int
+  bay          String
+  trailer      String?
+  assignedAt   DateTime
+  statusLabel  String
+  orderId      String   @unique
+  order        Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  assignedToId String?
+  assignedTo   User?    @relation(fields: [assignedToId], references: [id])
+}
+
+model Operation {
+  id           String        @id @default(cuid())
+  type         OperationType
+  billable     Boolean       @default(false)
+  trailer      String?
+  qty          Int
+  unit         String
+  appliedAt    DateTime
+  commentCount Int           @default(0)
+  photoCount   Int           @default(0)
+  orderId      String
+  order        Order         @relation(fields: [orderId], references: [id], onDelete: Cascade)
+
+  @@index([orderId])
+}
+
+model Supply {
+  id        String @id @default(cuid())
+  sku       String
+  category  String
+  qty       Int
+  unitCents Int
+  orderId   String
+  order     Order  @relation(fields: [orderId], references: [id], onDelete: Cascade)
+
+  @@index([orderId])
+}
