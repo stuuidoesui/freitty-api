@@ -51,7 +51,7 @@ Interactive docs: `/api/docs`.
 ## Local setup
 
 ```bash
-docker compose up -d
+docker compose up -d          # Postgres on localhost:5434
 cp .env.example .env
 npm install
 npx prisma migrate dev
@@ -61,6 +61,10 @@ npm run start:dev
 
 API: http://localhost:3000/api  
 Swagger: http://localhost:3000/api/docs
+
+Frontend lives in a sibling repo: `~/Projects/freitty-frontend`.
+
+Deploy: see [DEPLOY.md](./DEPLOY.md).
 
 ## Tests
 
