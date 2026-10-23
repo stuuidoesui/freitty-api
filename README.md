@@ -62,13 +62,6 @@ Frontend lives in a sibling repo: `~/Projects/freitty-frontend`.
 
 Deploy: see [DEPLOY.md](./DEPLOY.md).
 
-## Tests
-
-```bash
-npm test          # unit
-npm run test:e2e  # needs a seeded database
-```
-
 ## Deploy (Render)
 
 Blueprint: [`render.yaml`](./render.yaml). Connect the GitHub repo, set `FRONTEND_ORIGIN` to the Vercel URL. Free web services sleep; wake `/api/health` before a demo. Free Postgres expires after 30 days.

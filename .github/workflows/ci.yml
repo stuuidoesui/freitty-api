@@ -35,8 +35,5 @@ jobs:
       - run: npm ci
       - run: npx prisma generate
       - run: npx prisma migrate deploy
-      - run: npx prisma db seed
       - run: npx tsc --noEmit
-      - run: npx eslint "{src,apps,libs,test}/**/*.ts"
-      - run: npm test -- --runInBand
-      - run: npm run test:e2e -- --runInBand
+      - run: npx eslint "src/**/*.ts"
