@@ -1,4 +1,3 @@
-import { ForbiddenException, BadRequestException } from '@nestjs/common';
 import { OrderStatus } from '@prisma/client';
 
 export const PIPELINE_COLUMNS = [
@@ -12,31 +11,6 @@ export const PIPELINE_COLUMNS = [
 ] as const;
 
 export type PipelineColumn = (typeof PIPELINE_COLUMNS)[number];
-
-const CLIENT_ALLOWED: Array<[OrderStatus, OrderStatus]> = [
-  [OrderStatus.DRAFT, OrderStatus.READY],
-];
-
-export function isClientTransitionAllowed(
-  from: OrderStatus,
-  to: OrderStatus,
-): boolean {
-  return CLIENT_ALLOWED.some(([a, b]) => a === from && b === to);
-}
-
-export function assertClientStatusTransition(
-  from: OrderStatus,
-  to: OrderStatus,
-): void {
-  if (from === to) {
-    throw new BadRequestException('Order is already in this status');
-  }
-  if (!isClientTransitionAllowed(from, to)) {
-    throw new ForbiddenException(
-      'Client role may only move an order from Draft to Ready',
-    );
-  }
-}
 
 export function toPipelineColumn(status: OrderStatus): PipelineColumn {
   switch (status) {

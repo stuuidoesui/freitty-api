@@ -27,8 +27,6 @@ A client company (`Account`) has users and orders. An order is either **Cross-Do
 
 Pipeline columns: Draft → Ready → In Progress → Consolidated → In Transit → Deconsolidated → Closed.
 
-**Business rule (from the mockup):** a client may only drag **Draft → Ready**. Any other transition returns `403`.
-
 Seed data is dated around **17 Apr 2026** (the mockup week). `DEMO_NOW` freezes KPI windows so the dashboard is reproducible.
 
 ## API
@@ -42,9 +40,7 @@ Seed data is dated around **17 Apr 2026** (the mockup week). `DEMO_NOW` freezes 
 | GET | `/api/dashboard/activity?period=` | Completed / spend series |
 | GET | `/api/orders` | Filtered, paginated list |
 | GET | `/api/orders/counts` | Tab counters |
-| GET | `/api/orders/export.csv` | Same filters, CSV |
 | GET | `/api/orders/:number` | Full detail |
-| PATCH | `/api/orders/:number/status` | Pipeline move |
 
 Interactive docs: `/api/docs`.
 

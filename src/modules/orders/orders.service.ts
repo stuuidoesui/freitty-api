@@ -4,7 +4,6 @@ import { now } from '../../common/clock';
 import { PrismaService } from '../../prisma/prisma.service';
 import { DateRange, ListOrdersDto, OrderTab } from './dto/list-orders.dto';
 import { toOrderDetail, toOrderListItem } from './orders.mapper';
-import { assertClientStatusTransition, statusLabelFor } from './status.rules';
 
 const listInclude = {
   hub: { select: { name: true, region: true } },
@@ -154,71 +153,5 @@ export class OrdersService {
       throw new NotFoundException(`Order ${number} not found`);
     }
     return toOrderDetail(order);
-  }
-
-  async exportCsv(query: ListOrdersDto): Promise<string> {
-    const where = this.whereFromQuery(query);
-    const rows = await this.prisma.order.findMany({
-      where,
-      include: listInclude,
-      orderBy: [{ scheduledAt: 'desc' }, { number: 'desc' }],
-    });
-
-    const header = [
-      'number',
-      'type',
-      'status',
-      'hub',
-      'scheduledAt',
-      'carrier',
-      'destination',
-      'qty',
-      'refNumbers',
-      'createdBy',
-      'totalCents',
-    ];
-
-    const lines = rows.map((o) => {
-      const refs = [o.refNumber, ...o.subOrders.map((s) => s.refNumber)]
-        .filter(Boolean)
-        .join('|');
-      const cells = [
-        o.number,
-        o.type,
-        o.status,
-        o.hub.name,
-        o.scheduledAt?.toISOString() ?? '',
-        o.carrier ?? '',
-        o.destination ?? '',
-        o.qtyLabel ?? '',
-        refs,
-        o.createdBy.name,
-        String(o.totalCents),
-      ].map((c) => `"${String(c).replace(/"/g, '""')}"`);
-      return cells.join(',');
-    });
-
-    return [header.join(','), ...lines].join('\n');
-  }
-
-  async updateStatus(number: string, next: OrderStatus) {
-    const order = await this.prisma.order.findUnique({ where: { number } });
-    if (!order) {
-      throw new NotFoundException(`Order ${number} not found`);
-    }
-    assertClientStatusTransition(order.status, next);
-
-    const updated = await this.prisma.order.update({
-      where: { number },
-      data: {
-        status: next,
-        statusLabel: statusLabelFor(next, order.hasAlert),
-        nextStep:
-          next === OrderStatus.READY ? 'Waiting for warehouse' : order.nextStep,
-      },
-      include: detailInclude,
-    });
-
-    return toOrderDetail(updated);
   }
 }

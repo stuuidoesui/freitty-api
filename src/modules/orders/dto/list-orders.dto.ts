@@ -64,9 +64,3 @@ export class ListOrdersDto {
   @Max(100)
   limit?: number = 12;
 }
-
-export class PatchStatusDto {
-  @ApiPropertyOptional({ enum: OrderStatus })
-  @IsEnum(OrderStatus)
-  status!: OrderStatus;
-}

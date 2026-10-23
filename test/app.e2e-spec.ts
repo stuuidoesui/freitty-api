@@ -1,13 +1,11 @@
 import { INestApplication, ValidationPipe } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
-import { OrderStatus, PrismaClient } from '@prisma/client';
 import request from 'supertest';
 import { App } from 'supertest/types';
 import { AppModule } from './../src/app.module';
 
 describe('Freitty API (e2e)', () => {
   let app: INestApplication<App>;
-  const prisma = new PrismaClient();
 
   beforeAll(async () => {
     const moduleFixture: TestingModule = await Test.createTestingModule({
@@ -20,15 +18,10 @@ describe('Freitty API (e2e)', () => {
       new ValidationPipe({ transform: true, whitelist: true }),
     );
     await app.init();
-    await prisma.order.update({
-      where: { number: 'DRAFT-003' },
-      data: { status: OrderStatus.DRAFT, statusLabel: 'Draft' },
-    });
   });
 
   afterAll(async () => {
     await app.close();
-    await prisma.$disconnect();
   });
 
   it('GET /api/health', async () => {
@@ -75,25 +68,5 @@ describe('Freitty API (e2e)', () => {
     expect(res.status).toBe(200);
     expect(res.body.active.count).toBeGreaterThan(0);
     expect(res.body.needAttention.total).toBeGreaterThan(0);
-  });
-
-  it('PATCH /api/orders/:number/status forbids illegal client move', async () => {
-    const res = await request(app.getHttpServer())
-      .patch('/api/orders/FR001681/status')
-      .send({ status: OrderStatus.IN_PROGRESS });
-    expect(res.status).toBe(403);
-  });
-
-  it('PATCH /api/orders/DRAFT-003/status allows Draft → Ready', async () => {
-    const res = await request(app.getHttpServer())
-      .patch('/api/orders/DRAFT-003/status')
-      .send({ status: OrderStatus.READY });
-    expect(res.status).toBe(200);
-    expect(res.body.status).toBe(OrderStatus.READY);
-
-    await request(app.getHttpServer())
-      .patch('/api/orders/DRAFT-003/status')
-      .send({ status: OrderStatus.DRAFT })
-      .expect(403);
   });
 });
